@@ -84,6 +84,9 @@ class PolarViewWidget(QWidget):
         self.add_additional_context_menu_actions()
         self.reverse_cmap(self.histogram_widget)
 
+        self.auto_level_colors()
+        self.auto_level_histogram_range()
+
     @property
     def histogram_widget(self):
         return self.image_view.getHistogramWidget()
@@ -118,6 +121,26 @@ class PolarViewWidget(QWidget):
         cmap = gradient.colorMap()
         cmap.reverse()
         gradient.setColorMap(cmap)
+
+    @property
+    def array_list(self) -> list[np.ndarray]:
+        return list(self.image_dict.values())
+
+    def auto_level_colors(self):
+        # These levels appear to work well for the data we have
+        data = [x.flatten() for x in self.array_list]
+        lower = np.nanpercentile(data, 1.0)
+        upper = np.nanpercentile(data, 99.75)
+
+        self.image_view.setLevels(lower, upper)
+
+    def auto_level_histogram_range(self):
+        # Make the histogram range a little bigger than the auto level colors
+        data = [x.flatten() for x in self.array_list]
+        lower = np.nanpercentile(data, 0.5)
+        upper = np.nanpercentile(data, 99.8)
+
+        self.image_view.setHistogramRange(lower, upper)
 
 
 if __name__ == '__main__':
