@@ -1,0 +1,20 @@
+[build-system]
+requires = ['setuptools', 'setuptools_scm']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'PyLAD-Viewer'
+requires-python = '>=3.11'
+dynamic = ['version']
+dependencies = [
+    'hexrd@git+https://github.com/hexrd/hexrd.git#egg=0.9.6',
+    'numpy',
+    'pillow',
+    'pyside6',
+    'pyqtgraph',
+]
+readme = 'REAMDE.md'
+
+[tool.black]
+line-length = 79
+skip-string-normalization = true
