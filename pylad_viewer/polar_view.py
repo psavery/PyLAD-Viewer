@@ -79,6 +79,9 @@ class PolarViewWidget(QWidget):
 
 if __name__ == '__main__':
 
+    import importlib.resources
+    from pathlib import Path
+
     from PySide6.QtWidgets import QMainWindow
 
     from PIL import Image
@@ -86,8 +89,16 @@ if __name__ == '__main__':
 
     from hexrd.instrument import HEDMInstrument
 
+    import pylad_viewer.resources
+
+    resources_path = importlib.resources.files(pylad_viewer.resources)
+
+    repo_dir = Path(pylad_viewer.__file__).parent.parent
+    ceria_example_path = repo_dir / 'examples/ceria'
+    images_path = ceria_example_path / 'images'
+
     # Load the instrument
-    with open('MEC_Varex.yml', 'r') as rf:
+    with open(resources_path / 'MEC_Varex.yml', 'r') as rf:
         conf = yaml.safe_load(rf)
 
     instr = HEDMInstrument(conf)
@@ -113,8 +124,8 @@ if __name__ == '__main__':
     app = pg.mkQApp()
 
     img_dict = {
-        'Varex1': np.array(Image.open('images/varex1.tif')),
-        'Varex2': np.array(Image.open('images/varex2.tif')),
+        'Varex1': np.array(Image.open(images_path / 'varex1.tif')),
+        'Varex2': np.array(Image.open(images_path / 'varex2.tif')),
     }
 
     win = QMainWindow()
