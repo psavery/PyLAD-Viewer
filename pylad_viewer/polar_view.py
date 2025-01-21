@@ -1,3 +1,5 @@
+from functools import partial
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QVBoxLayout,
@@ -45,6 +47,8 @@ class PolarViewWidget(QWidget):
         im = pg.ImageView(view=image_label_plot)
         im.setImage(polar_img.filled(np.nan))
         im.view.setAspectLocked(False)
+        im.view.vb.setBackgroundColor('white')
+        self.image_view = im
 
         extent = np.degrees(pv.extent)
         im.imageItem.setRect(
@@ -60,6 +64,7 @@ class PolarViewWidget(QWidget):
 
         plt = pg.plot()
         plt.showGrid(x=True, y=True)
+        self.lineout_plot = plt
 
         plt.setLabel('left', 'Azimuthal Average')
         plt.setLabel('bottom', '<font> 2&theta; </font>', units='deg')
@@ -75,6 +80,44 @@ class PolarViewWidget(QWidget):
         )
 
         plt.setXLink(im.view)
+
+        self.add_additional_context_menu_actions()
+        self.reverse_cmap(self.histogram_widget)
+
+    @property
+    def histogram_widget(self):
+        return self.image_view.getHistogramWidget()
+
+    def add_additional_context_menu_actions(self):
+        self.add_additional_cmap_menu_actions(self.histogram_widget)
+
+    def add_additional_cmap_menu_actions(self, w):
+        """Add a 'reverse' action to the pyqtgraph colormap menu
+
+        This assumes pyqtgraph won't change its internal attribute structure.
+        If it does change, then this function just won't work...
+        """
+        try:
+            gradient = w.item.gradient
+            menu = gradient.menu
+        except AttributeError:
+            # pyqtgraph must have changed its attribute structure
+            return
+
+        if not menu:
+            return
+
+        reverse = partial(self.reverse_cmap, hist=w)
+
+        menu.addSeparator()
+        action = menu.addAction('reverse')
+        action.triggered.connect(reverse)
+
+    def reverse_cmap(self, hist):
+        gradient = hist.item.gradient
+        cmap = gradient.colorMap()
+        cmap.reverse()
+        gradient.setColorMap(cmap)
 
 
 if __name__ == '__main__':
