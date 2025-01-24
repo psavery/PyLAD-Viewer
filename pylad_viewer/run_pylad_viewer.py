@@ -1,3 +1,3 @@
 import subprocess
 
-subprocess.Popen(['python', 'pylad_viewer.py'])
+subprocess.Popen(['python', 'raw_view.py'])
