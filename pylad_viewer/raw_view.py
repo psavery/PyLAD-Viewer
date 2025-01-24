@@ -235,6 +235,7 @@ class RawImagesWidget(QWidget):
 if __name__ == '__main__':
 
     from pathlib import Path
+    import sys
 
     from PySide6.QtWidgets import QMainWindow
 
@@ -242,9 +243,17 @@ if __name__ == '__main__':
 
     import pylad_viewer
 
-    repo_dir = Path(pylad_viewer.__file__).parent.parent
-    ceria_example_path = repo_dir / 'examples/ceria'
-    images_path = ceria_example_path / 'images'
+    if len(sys.argv) == 1:
+        # Use the default images
+        repo_dir = Path(pylad_viewer.__file__).parent.parent
+        ceria_example_path = repo_dir / 'examples/ceria'
+        images_path = ceria_example_path / 'images'
+        image_file_paths = [
+            images_path / 'varex1.tif',
+            images_path / 'varex2.tif',
+        ]
+    else:
+        image_file_paths = sys.argv[1:3]
 
     pg.setConfigOptions(
         **{
@@ -257,8 +266,8 @@ if __name__ == '__main__':
 
     app = pg.mkQApp()
 
-    varex1 = np.array(Image.open(images_path / 'varex1.tif'))
-    varex2 = np.array(Image.open(images_path / 'varex2.tif'))
+    varex1 = np.array(Image.open(image_file_paths[0]))
+    varex2 = np.array(Image.open(image_file_paths[1]))
 
     win = QMainWindow()
 
