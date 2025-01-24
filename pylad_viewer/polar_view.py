@@ -47,7 +47,8 @@ class PolarViewWidget(QWidget):
         im = pg.ImageView(view=image_label_plot)
         im.setImage(polar_img.filled(np.nan))
         im.view.setAspectLocked(False)
-        im.view.vb.setBackgroundColor('white')
+        # FIXME: set this back to white later
+        # im.view.vb.setBackgroundColor('white')
         self.image_view = im
 
         extent = np.degrees(pv.extent)
