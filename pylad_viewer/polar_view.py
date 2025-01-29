@@ -26,7 +26,7 @@ class PolarViewWidget(QWidget):
 
         # These are perfect for our Varex setup. Maybe we should expose
         # them as an option sometime for other types of detectors.
-        default_y_range = [-95, 95]
+        default_y_range = [-90, 270]
 
         self.pv = pv
         self.image_dict = image_dict

@@ -109,8 +109,8 @@ def main():
 
     # Polar view
     tth_range = [4.0, 95.0]
-    eta_min = -180.0
-    eta_max = 180.0
+    eta_min = -90.0
+    eta_max = 270.0
     # pixel_size = (0.01, 0.1)
     pixel_size = (0.1, 0.1)
 
