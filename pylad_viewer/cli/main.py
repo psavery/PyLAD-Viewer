@@ -112,7 +112,7 @@ def main():
     eta_min = -90.0
     eta_max = 270.0
     # pixel_size = (0.01, 0.1)
-    pixel_size = (0.1, 0.1)
+    pixel_size = (0.025, 0.1)
 
     pv = PolarView(tth_range, instr, eta_min, eta_max, pixel_size,
                    cache_coordinate_map=True)
