@@ -63,6 +63,9 @@ class PolarViewWidget(QWidget):
         # Next, create the lineout and set it
         lineout = polar_img.sum(axis=0) / np.sum(~polar_img.mask, axis=0)
 
+        # Any columns that are all nans should just be nan
+        lineout = lineout.filled(np.nan)
+
         plt = pg.plot()
         plt.showGrid(x=True, y=True)
         self.lineout_plot = plt

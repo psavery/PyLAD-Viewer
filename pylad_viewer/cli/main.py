@@ -71,6 +71,7 @@ def main():
     }
 
     win = QMainWindow()
+    win.setWindowTitle(Path(image_file_paths[0]).parent.name)
 
     def show_message(msg):
         win.statusBar().showMessage(msg)
@@ -79,8 +80,8 @@ def main():
     top_layout = QHBoxLayout()
     bottom_layout = QHBoxLayout()
 
-    v_layout.addLayout(top_layout, stretch=3)
-    v_layout.addLayout(bottom_layout, stretch=4)
+    v_layout.addLayout(top_layout, stretch=2)
+    v_layout.addLayout(bottom_layout, stretch=3)
 
     central_widget = QWidget()
     central_widget.setLayout(v_layout)
@@ -121,5 +122,5 @@ def main():
     polar_view_widget.mouse_move_message.connect(show_message)
     bottom_layout.addWidget(polar_view_widget)
 
-    win.show()
+    win.showMaximized()
     app.exec()
