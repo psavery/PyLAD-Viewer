@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 
 from PySide6.QtWidgets import (
+    QCheckBox,
     QHBoxLayout,
     QMainWindow,
     QVBoxLayout,
@@ -80,6 +81,9 @@ def main():
     top_layout = QHBoxLayout()
     bottom_layout = QHBoxLayout()
 
+    check_saturation_cb = QCheckBox('Saturation Check')
+    v_layout.addWidget(check_saturation_cb)
+
     v_layout.addLayout(top_layout, stretch=2)
     v_layout.addLayout(bottom_layout, stretch=3)
 
@@ -93,8 +97,17 @@ def main():
     raw_images_widget.mouse_move_message.connect(show_message)
     top_layout.addWidget(raw_images_widget, stretch=3)
 
+    def check_saturation_toggled(b: bool):
+        if b:
+            raw_images_widget.set_levels_for_saturation_check()
+        else:
+            raw_images_widget.auto_level_colors()
+            raw_images_widget.auto_level_histogram_range()
+
+    check_saturation_cb.toggled.connect(check_saturation_toggled)
+
     # Flat view
-    tth_range = [6.0, 72.0]
+    tth_range = [6.0, 86.0]
     eta_min = 0.0
     eta_max = 360.0
     # pixel_size = (0.025, 0.25)
@@ -109,7 +122,7 @@ def main():
     top_layout.addWidget(flat_view_widget, stretch=2)
 
     # Polar view
-    tth_range = [4.0, 95.0]
+    tth_range = [12.0, 86.0]
     eta_min = -90.0
     eta_max = 270.0
     # pixel_size = (0.01, 0.1)

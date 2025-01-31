@@ -3,8 +3,9 @@ from functools import partial
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QWidget,
     QHBoxLayout,
+    QMessageBox,
+    QWidget,
 )
 
 import numpy as np
@@ -129,6 +130,22 @@ class RawImagesWidget(QWidget):
     @property
     def histogram_widgets(self):
         return [im.getHistogramWidget() for im in self.image_view_list]
+
+    def set_levels_for_saturation_check(self):
+        lower = 38000
+        upper = 38500
+        for im in self.image_view_list:
+            im.setLevels(lower, upper)
+            im.setHistogramRange(lower - 1e3, upper + 1e3)
+
+        data = np.array(self.array_list)
+        any_saturated = np.any(data > lower)
+        if any_saturated:
+            QMessageBox.critical(
+                None,
+                'Saturation Warning',
+                f'Data contains pixels above {lower} in value'
+            )
 
     def auto_level_colors(self):
         # These levels appear to work well for the data we have

@@ -1,3 +1,4 @@
+import copy
 from functools import partial
 
 from PySide6.QtCore import Signal
@@ -28,8 +29,18 @@ class PolarViewWidget(QWidget):
         # them as an option sometime for other types of detectors.
         default_y_range = [-90, 270]
 
+        # self.unscaled_image_dict = image_dict
+
+        # We will perform log scaling on the images
+        image_dict = copy.deepcopy(image_dict)
+
         self.pv = pv
         self.image_dict = image_dict
+
+        # for key, img in image_dict.items():
+        #     img -= np.nanmin(img)
+        #     img = np.log(img + 1)
+        #     image_dict[key] = img
 
         # First, create the polar view image and set it
         polar_img = pv.warp_image(
@@ -37,6 +48,12 @@ class PolarViewWidget(QWidget):
             pad_with_nans=True,
             do_interpolation=True,
         )
+
+        # unscaled_polar_img = pv.warp_image(
+        #     self.unscaled_image_dict,
+        #     pad_with_nans=True,
+        #     do_interpolation=True,
+        # )
 
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -61,7 +78,10 @@ class PolarViewWidget(QWidget):
         layout.addWidget(im, stretch=3)
 
         # Next, create the lineout and set it
-        lineout = polar_img.sum(axis=0) / np.sum(~polar_img.mask, axis=0)
+        lineout = (
+            polar_img.sum(axis=0) /
+            np.sum(~polar_img.mask, axis=0)
+        )
 
         # Any columns that are all nans should just be nan
         lineout = lineout.filled(np.nan)
@@ -174,7 +194,7 @@ class PolarViewWidget(QWidget):
         # These levels appear to work well for the data we have
         data = [x.flatten() for x in self.array_list]
         lower = np.nanpercentile(data, 1.0)
-        upper = np.nanpercentile(data, 99.75)
+        upper = np.nanpercentile(data, 99.9)
 
         self.image_view.setLevels(lower, upper)
 
@@ -182,7 +202,7 @@ class PolarViewWidget(QWidget):
         # Make the histogram range a little bigger than the auto level colors
         data = [x.flatten() for x in self.array_list]
         lower = np.nanpercentile(data, 0.5)
-        upper = np.nanpercentile(data, 99.8)
+        upper = np.nanpercentile(data, 99.99)
 
         self.image_view.setHistogramRange(lower, upper)
 
