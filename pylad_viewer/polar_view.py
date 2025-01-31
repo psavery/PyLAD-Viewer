@@ -88,6 +88,46 @@ class PolarViewWidget(QWidget):
         self.auto_level_colors()
         self.auto_level_histogram_range()
 
+        self.setup_connections()
+
+    def setup_connections(self):
+        self.image_view.scene.sigMouseMoved.connect(self.on_image_mouse_move)
+        self.lineout_plot.scene().sigMouseMoved.connect(self.on_lineout_plot_move)
+
+    def on_image_mouse_move(self, pos):
+        data = self.image_view.getImageItem().image
+
+        # First, map the scene coordinates to the view
+        pos = self.image_view.view.vb.mapSceneToView(pos)
+
+        # We get the correct pixel coordinates by flooring these
+        tth, eta = pos.toTuple()
+
+        j = int(np.round(
+            (tth - np.degrees(self.pv.tth_min)) / self.pv.tth_pixel_size - 0.5
+        ))
+        i = int(np.round(
+            (eta - np.degrees(self.pv.eta_min)) / self.pv.eta_pixel_size - 0.5
+        ))
+
+        data_shape = data.shape
+        if not 0 <= i < data_shape[0] or not 0 <= j < data_shape[1]:
+            # The mouse is out of bounds
+            return
+
+        intensity = data[i, j]
+
+        # Unfortunately, if we do f'{x=}', it includes the numpy
+        # dtype, which we don't want.
+        message = f'tth={tth:.3f}, eta={eta:.3f}, intensity={intensity:.3f}'
+        self.mouse_move_message.emit(message)
+
+    def on_lineout_plot_move(self, pos):
+        pos = self.lineout_plot.plotItem.vb.mapSceneToView(pos)
+        x, y = pos.toTuple()
+        message = f'x={x:.3f}, y={y:.3f}'
+        self.mouse_move_message.emit(message)
+
     @property
     def histogram_widget(self):
         return self.image_view.getHistogramWidget()
