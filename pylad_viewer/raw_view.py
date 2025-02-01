@@ -49,6 +49,18 @@ class RawImagesWidget(QWidget):
         # they will be reversed too.
         self.reverse_cmap(self.histogram_widgets[0])
 
+        self.reflection_artists = []
+        for image_view in self.image_view_list:
+            artist = pg.ScatterPlotItem(
+                pxMode=True,
+                symbol='o',
+                pen=pg.mkPen(0, 1, width=1),
+                brush=None,
+                size=5,
+            )
+            self.reflection_artists.append(artist)
+            image_view.addItem(artist)
+
     def setup_connections(self):
         for im in self.image_view_list:
             f = partial(self._on_mouse_move, image_view=im)
@@ -139,13 +151,27 @@ class RawImagesWidget(QWidget):
             im.setHistogramRange(lower - 1e3, upper + 1e3)
 
         data = np.array(self.array_list)
-        any_saturated = np.any(data > lower)
-        if any_saturated:
+        num_saturated = np.count_nonzero(data > lower)
+        if num_saturated > 0:
+            for array, artist in zip(self.array_list, self.reflection_artists):
+                coords = np.argwhere(array > lower)
+                if coords.size == 0:
+                    continue
+
+                coords = coords.astype(float) + 0.5
+                coords = np.atleast_2d(coords)[:, [1, 0]]
+                artist.setData(*coords.T)
+
             QMessageBox.critical(
                 None,
                 'Saturation Warning',
-                f'Data contains pixels above {lower} in value'
+                f'Data contains {num_saturated} pixels '
+                f'above {lower} in value'
             )
+
+    def clear_artists(self):
+        for artist in self.reflection_artists:
+            artist.clear()
 
     def auto_level_colors(self):
         # These levels appear to work well for the data we have

@@ -101,6 +101,7 @@ def main():
         if b:
             raw_images_widget.set_levels_for_saturation_check()
         else:
+            raw_images_widget.clear_artists()
             raw_images_widget.auto_level_colors()
             raw_images_widget.auto_level_histogram_range()
 
