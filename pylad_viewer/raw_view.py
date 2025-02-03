@@ -19,35 +19,43 @@ class RawImagesWidget(QWidget):
     def __init__(self, array_list: list[np.ndarray], parent=None):
         super().__init__(parent)
 
-        self.array_list = array_list
+        self.setup_widgets(len(array_list))
+        self.set_data(array_list)
+
         self.link_levels_and_cmaps = True
         self._updating_histograms = False
-
-        # container widget with a layout to add QWidgets to
-        layout = QHBoxLayout()
-        self.setLayout(layout)
-
-        self.image_view_list = []
-        for array in array_list:
-            im = pg.ImageView()
-            im.setImage(array)
-            layout.addWidget(im)
-            self.image_view_list.append(im)
-
-        self.auto_level_colors()
-        self.auto_level_histogram_range()
-
-        self.add_additional_context_menu_actions()
-
-        # Uncomment these to also link image views and histogram ranges
-        # self.link_image_views()
-        # self.link_histogram_ranges()
 
         self.setup_connections()
 
         # Reverse one of the cmaps. Since the others are linked,
         # they will be reversed too.
         self.reverse_cmap(self.histogram_widgets[0])
+
+    def setup_connections(self):
+        for im in self.image_view_list:
+            f = partial(self._on_mouse_move, image_view=im)
+            im.scene.sigMouseMoved.connect(f)
+
+        for hist in self.histogram_widgets:
+            hist.sigLookupTableChanged.connect(self._on_lookup_table_changed)
+            hist.sigLevelsChanged.connect(self._on_levels_changed)
+
+    def setup_widgets(self, num_arrays):
+        # container widget with a layout to add QWidgets to
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+
+        self.image_view_list = []
+        for _ in range(num_arrays):
+            im = pg.ImageView()
+            layout.addWidget(im)
+            self.image_view_list.append(im)
+
+        self.add_additional_context_menu_actions()
+
+        # Uncomment these to also link image views and histogram ranges
+        # self.link_image_views()
+        # self.link_histogram_ranges()
 
         self.reflection_artists = []
         for image_view in self.image_view_list:
@@ -61,14 +69,14 @@ class RawImagesWidget(QWidget):
             self.reflection_artists.append(artist)
             image_view.addItem(artist)
 
-    def setup_connections(self):
-        for im in self.image_view_list:
-            f = partial(self._on_mouse_move, image_view=im)
-            im.scene.sigMouseMoved.connect(f)
+    def set_data(self, array_list: list[np.ndarray]):
+        self.array_list = array_list
 
-        for hist in self.histogram_widgets:
-            hist.sigLookupTableChanged.connect(self._on_lookup_table_changed)
-            hist.sigLevelsChanged.connect(self._on_levels_changed)
+        for im, array in zip(self.image_view_list, array_list):
+            im.setImage(array)
+
+        self.auto_level_colors()
+        self.auto_level_histogram_range()
 
     def add_additional_context_menu_actions(self):
         for hist in self.histogram_widgets:

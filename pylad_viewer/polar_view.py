@@ -25,6 +25,47 @@ class PolarViewWidget(QWidget):
     ):
         super().__init__(parent)
 
+        self.pv = pv
+
+        self.setup_widgets()
+        self.set_data(image_dict)
+
+        self.setup_connections()
+
+    def setup_connections(self):
+        self.image_view.scene.sigMouseMoved.connect(self.on_image_mouse_move)
+        self.lineout_plot.scene().sigMouseMoved.connect(
+            self.on_lineout_plot_move)
+
+    def setup_widgets(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        # Image view
+        image_label_plot = pg.PlotItem()
+        image_label_plot.setLabel('left', '<font> &eta; </font>', units='deg')
+
+        im = pg.ImageView(view=image_label_plot)
+        im.view.setAspectLocked(False)
+
+        layout.addWidget(im, stretch=3)
+        self.image_view = im
+
+        # Lineout plot
+        plt = pg.plot()
+        plt.showGrid(x=True, y=True)
+        self.lineout_plot = plt
+
+        plt.setLabel('left', 'Azimuthal Average')
+        plt.setLabel('bottom', '<font> 2&theta; </font>', units='deg')
+        layout.addWidget(plt, stretch=1)
+
+        plt.setXLink(im.view)
+
+        self.add_additional_context_menu_actions()
+        self.reverse_cmap(self.histogram_widget)
+
+    def set_data(self, image_dict: dict[str, np.ndarray]):
         # These are perfect for our Varex setup. Maybe we should expose
         # them as an option sometime for other types of detectors.
         default_y_range = [-90, 270]
@@ -34,7 +75,6 @@ class PolarViewWidget(QWidget):
         # We will perform log scaling on the images
         image_dict = copy.deepcopy(image_dict)
 
-        self.pv = pv
         self.image_dict = image_dict
 
         # for key, img in image_dict.items():
@@ -43,6 +83,7 @@ class PolarViewWidget(QWidget):
         #     image_dict[key] = img
 
         # First, create the polar view image and set it
+        pv = self.pv
         polar_img = pv.warp_image(
             image_dict,
             pad_with_nans=True,
@@ -55,27 +96,15 @@ class PolarViewWidget(QWidget):
         #     do_interpolation=True,
         # )
 
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-
-        image_label_plot = pg.PlotItem()
-        image_label_plot.setLabel('left', '<font> &eta; </font>', units='deg')
-
-        im = pg.ImageView(view=image_label_plot)
-        im.setImage(polar_img.filled(np.nan))
-        im.view.setAspectLocked(False)
-        # FIXME: set this back to white later
-        # im.view.vb.setBackgroundColor('white')
-        self.image_view = im
+        self.image_view.setImage(polar_img.filled(np.nan))
 
         extent = np.degrees(pv.extent)
-        im.imageItem.setRect(
+        self.image_view.imageItem.setRect(
             extent[0],
             extent[3],
             extent[1] - extent[0],
             extent[2] - extent[3],
         )
-        layout.addWidget(im, stretch=3)
 
         # Next, create the lineout and set it
         lineout = (
@@ -86,36 +115,18 @@ class PolarViewWidget(QWidget):
         # Any columns that are all nans should just be nan
         lineout = lineout.filled(np.nan)
 
-        plt = pg.plot()
-        plt.showGrid(x=True, y=True)
-        self.lineout_plot = plt
-
-        plt.setLabel('left', 'Azimuthal Average')
-        plt.setLabel('bottom', '<font> 2&theta; </font>', units='deg')
-
         tth_values = pv.angular_grid[1][0]
-        plt.plot(np.degrees(tth_values), lineout)
-        layout.addWidget(plt, stretch=1)
+        self.lineout_plot.clear()
+        self.lineout_plot.plot(np.degrees(tth_values), lineout)
 
-        im.view.setRange(
+        self.image_view.view.setRange(
             xRange=(*extent[:2],),
             yRange=default_y_range,
             padding=0.01,
         )
 
-        plt.setXLink(im.view)
-
-        self.add_additional_context_menu_actions()
-        self.reverse_cmap(self.histogram_widget)
-
         self.auto_level_colors()
         self.auto_level_histogram_range()
-
-        self.setup_connections()
-
-    def setup_connections(self):
-        self.image_view.scene.sigMouseMoved.connect(self.on_image_mouse_move)
-        self.lineout_plot.scene().sigMouseMoved.connect(self.on_lineout_plot_move)
 
     def on_image_mouse_move(self, pos):
         data = self.image_view.getImageItem().image

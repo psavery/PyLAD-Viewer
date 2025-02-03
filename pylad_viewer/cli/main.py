@@ -1,7 +1,9 @@
 import importlib.resources
 from pathlib import Path
+import select
 import sys
 
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
@@ -66,10 +68,13 @@ def main():
 
     app = pg.mkQApp()
 
-    img_dict = {
-        'Varex1': np.array(Image.open(image_file_paths[0])),
-        'Varex2': np.array(Image.open(image_file_paths[1])),
-    }
+    def create_image_dict(filepaths):
+        return {
+            'Varex1': np.array(Image.open(filepaths[0])),
+            'Varex2': np.array(Image.open(filepaths[1])),
+        }
+
+    img_dict = create_image_dict(image_file_paths)
 
     win = QMainWindow()
     win.setWindowTitle(Path(image_file_paths[0]).parent.name)
@@ -135,6 +140,37 @@ def main():
     polar_view_widget = PolarViewWidget(pv, img_dict, win)
     polar_view_widget.mouse_move_message.connect(show_message)
     bottom_layout.addWidget(polar_view_widget)
+
+    def set_data(filepaths):
+        print('Setting data with filepaths:', filepaths, flush=True)
+        win.setWindowTitle('Loading new data...')
+        img_dict = create_image_dict(filepaths)
+
+        raw_images_widget.set_data(list(img_dict.values()))
+        flat_view_widget.set_data(img_dict)
+        polar_view_widget.set_data(img_dict)
+
+        win.setWindowTitle(Path(filepaths[0]).parent.name)
+
+    def read_stdin_loop():
+        # Read from stdin every 0.5 seconds to see if new datasets were
+        # provided.
+        timeout = 0
+        rlist, _, _ = select.select([sys.stdin], [], [], timeout)
+        if sys.stdin in rlist:
+            message = sys.stdin.readline().rstrip()
+            if message:
+                print('Message received from stdin:', message, flush=True)
+                if ', ' in message:
+                    filepaths = message.split(', ')
+                    set_data(filepaths)
+
+        QTimer.singleShot(0.5, read_stdin_loop)
+
+    # Start the stdin reader loop
+    # This checks stdin every 0.5 seconds to see if there was new
+    # data provided.
+    read_stdin_loop()
 
     win.showMaximized()
     app.exec()

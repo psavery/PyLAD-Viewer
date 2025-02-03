@@ -27,21 +27,28 @@ class FlatViewWidget(QWidget):
         super().__init__(parent)
 
         self.ip = ip
+        self.image_view = None
+
+        self.setup_image_view()
+        self.set_data(image_dict)
+
+    def setup_image_view(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        self.image_view = pg.ImageView()
+        layout.addWidget(self.image_view)
+
+        self.add_additional_context_menu_actions()
+        self.reverse_cmap(self.histogram_widget)
+
+    def set_data(self, image_dict: dict[str, np.ndarray]):
         self.image_dict = image_dict
 
         # First, create the projected image and set it
         self.ip.make_projected_image(image_dict)
 
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-
-        im = pg.ImageView()
-        im.setImage(self.projected_image)
-        self.image_view = im
-        layout.addWidget(im)
-
-        self.add_additional_context_menu_actions()
-        self.reverse_cmap(self.histogram_widget)
+        self.image_view.setImage(self.projected_image)
 
         self.auto_level_colors()
         self.auto_level_histogram_range()
