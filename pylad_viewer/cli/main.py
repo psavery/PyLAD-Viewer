@@ -183,6 +183,10 @@ def main():
                 if ', ' in message:
                     filepaths = message.split(', ')
 
+                    if any(not Path(x).exists() for x in filepaths):
+                        print('Some file paths did not exist. Ignoring...')
+                        continue
+
                     # Run this in the GUI thread
                     # There's another loop listening to this images stack
                     with new_images_lock:
