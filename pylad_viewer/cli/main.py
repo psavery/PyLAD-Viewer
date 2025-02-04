@@ -1,7 +1,7 @@
 import importlib.resources
 from pathlib import Path
-import select
 import sys
+import threading
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
@@ -141,7 +141,11 @@ def main():
     polar_view_widget.mouse_move_message.connect(show_message)
     bottom_layout.addWidget(polar_view_widget)
 
+    new_images_stack = []
+    new_images_lock = threading.Lock()
+
     def set_data(filepaths):
+        # This ought to be ran on the GUI thread.
         print('Setting data with filepaths:', filepaths, flush=True)
         win.setWindowTitle('Loading new data...')
         img_dict = create_image_dict(filepaths)
@@ -150,27 +154,49 @@ def main():
         flat_view_widget.set_data(img_dict)
         polar_view_widget.set_data(img_dict)
 
+        check_saturation_cb.setChecked(False)
+
         win.setWindowTitle(Path(filepaths[0]).parent.name)
 
+    def check_for_new_images_loop():
+        # This runs in the GUI thread, and just checks for new images
+        # in a mutex-controlled list.
+        new_images = None
+        with new_images_lock:
+            if new_images_stack:
+                new_images = new_images_stack.pop(0)
+
+        if new_images:
+            set_data(new_images)
+
+        QTimer.singleShot(0.5, check_for_new_images_loop)
+
     def read_stdin_loop():
+        # This runs in a separate thread.
         # Read from stdin every 0.5 seconds to see if new datasets were
         # provided.
-        timeout = 0
-        rlist, _, _ = select.select([sys.stdin], [], [], timeout)
-        if sys.stdin in rlist:
-            message = sys.stdin.readline().rstrip()
+        # If new images are found, add them to a mutex-controlled list
+        for message in sys.stdin:
+            message = message.rstrip()
             if message:
                 print('Message received from stdin:', message, flush=True)
                 if ', ' in message:
                     filepaths = message.split(', ')
-                    set_data(filepaths)
 
-        QTimer.singleShot(0.5, read_stdin_loop)
+                    # Run this in the GUI thread
+                    # There's another loop listening to this images stack
+                    with new_images_lock:
+                        new_images_stack.append(filepaths)
 
-    # Start the stdin reader loop
-    # This checks stdin every 0.5 seconds to see if there was new
-    # data provided.
-    read_stdin_loop()
+    # FIXME: this is sort of complicated, but I couldn't get other methods
+    # to work on Windows. We have a separate thread that constantly reads
+    # from stdin, and it posts new images to a mutex-controlled list, which
+    # is checked regularly by the GUI thread.
+
+    # Start the stdin reader thread
+    thread = threading.Thread(target=read_stdin_loop)
+    thread.start()
+    check_for_new_images_loop()
 
     win.showMaximized()
     app.exec()
