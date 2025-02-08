@@ -3,9 +3,10 @@ from pathlib import Path
 import sys
 import threading
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
+    QLabel,
     QHBoxLayout,
     QMainWindow,
     QVBoxLayout,
@@ -77,18 +78,33 @@ def main():
     img_dict = create_image_dict(image_file_paths)
 
     win = QMainWindow()
-    win.setWindowTitle(Path(image_file_paths[0]).parent.name)
 
     def show_message(msg):
         win.statusBar().showMessage(msg)
+
+    top_bar_layout = QHBoxLayout()
 
     v_layout = QVBoxLayout()
     top_layout = QHBoxLayout()
     bottom_layout = QHBoxLayout()
 
     check_saturation_cb = QCheckBox('Saturation Check')
-    v_layout.addWidget(check_saturation_cb)
+    run_num_label = QLabel()
+    run_num_label.setStyleSheet(
+        'font-size: 18pt; font-weight: bold; color: red'
+    )
 
+    def set_title(title):
+        win.setWindowTitle(title)
+        run_num_label.setText(title)
+
+    set_title(Path(image_file_paths[0]).parent.name)
+
+    top_bar_layout.addWidget(check_saturation_cb, 1, Qt.AlignLeft)
+    top_bar_layout.addWidget(run_num_label, 1, Qt.AlignHCenter)
+    top_bar_layout.addWidget(QLabel(), 1, Qt.AlignRight)
+
+    v_layout.addLayout(top_bar_layout)
     v_layout.addLayout(top_layout, stretch=2)
     v_layout.addLayout(bottom_layout, stretch=3)
 
@@ -147,7 +163,7 @@ def main():
     def set_data(filepaths):
         # This ought to be ran on the GUI thread.
         print('Setting data with filepaths:', filepaths, flush=True)
-        win.setWindowTitle('Loading new data...')
+        set_title('Loading new data...')
         img_dict = create_image_dict(filepaths)
 
         raw_images_widget.set_data(list(img_dict.values()))
@@ -156,7 +172,7 @@ def main():
 
         check_saturation_cb.setChecked(False)
 
-        win.setWindowTitle(Path(filepaths[0]).parent.name)
+        set_title(Path(filepaths[0]).parent.name)
 
     def check_for_new_images_loop():
         # This runs in the GUI thread, and just checks for new images
