@@ -1,7 +1,9 @@
 PyLAD Viewer
 ============
 
-Output visualization software for the PyLAD (Python for Large Area Detectors) library.
+Output visualization software for the [PyLAD (Python for Large Area Detectors) library](https://github.com/psavery/PyLAD).
+
+![pylad-viewer-example](https://github.com/user-attachments/assets/fec5d433-d438-4b47-8c4b-8000307f6328)
 
 This software was used at SLAC National Accelerator Laboratory at MEC during
 experiments in early 2025.
@@ -10,9 +12,12 @@ experiments in early 2025.
 
 PyLAD-Viewer is primarily intended to be used during live experimental
 beamtimes in order to assist with the quick decision-making needed when
-performing shots.
+performing shots. It is opened and updated automatically by the PyLAD
+client during beamtime as soon as new data becomes available
+(see [here](https://github.com/psavery/PyLAD/blob/main/scripts/MEC/REAMDE.md)),
+which allows the users to quickly discern what steps to take next.
 
-The PyLAD-Viewer displays output image files from the Varex detectors using a
+PyLAD-Viewer displays output image files from the Varex detectors using a
 few different methods: raw, flat and polar. All of the views have configuration
 settings which may be edited in the [configuration file](#configuration).
 
@@ -46,8 +51,8 @@ for understanding why the diffraction pattern may appear a certain way.
 The polar view is in the bottom tile.
 
 The polar view is warped so that two theta is along the x-axis, and eta
-(or phi) is along the y axis. If the instrument is [calibrated](#Configuration)
-correctly, Debye-Scherrer rings should appear straight.
+(or phi) is along the y axis. If the instrument is [calibrated](#configuration)
+correctly, Debye-Scherrer rings should appear vertical.
 
 At the bottom of the polar view is an azimuthal average (lineout) along two
 theta. This shows intensities found at different values of two theta, and
@@ -70,7 +75,7 @@ The code will be present in the `pylad-viewer` directory.
 We recommend creating and activating a conda environment to use with this
 software.
 
-First, all dependencies must be installed, like so:
+Afterward, all dependencies must be installed, like so:
 
 ```bash
 conda install -c hexrd -c conda-forge hexrd numpy pillow pyside6 pyqtgraph
@@ -123,9 +128,15 @@ strength.
 When checked, a message will appear indicating the
 number of saturated pixels detected.
 
+![saturation_warning](https://github.com/user-attachments/assets/f3a4d612-6c0d-4ab5-bf17-bc6363682438)
+
 The colormap settings are also
 automatically adjusted so that saturated pixels are black and all
 other pixels are white. Red circles are drawn around saturated
 pixels so they can be more easily located.
+
+![saturation_check1](https://github.com/user-attachments/assets/38d862aa-b158-4503-95c4-1f7c10236b7c)
+
+![saturation_check2](https://github.com/user-attachments/assets/1fc55995-d4fb-4b1d-a676-3ed5f200f37e)
 
 The saturation level may be modified in the config settings.
