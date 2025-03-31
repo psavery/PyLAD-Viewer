@@ -1,0 +1,24 @@
+polar_view:
+    # Set a two theta range that will display all of the data.
+    # We have seen some spots at up to 83 degrees, believe it or not...
+    tth_range: [4.0, 95.0]
+    # Define an eta range which includes all of the data and centers
+    # the y-axis of the polar view in an intuitive way.
+    eta_range: [-110.0, 110.0]
+    # Pixel sizes in two theta, eta
+    # Smaller pixel sizes means higher resolution, but it can
+    # take substantially longer to generate the image.
+    pixel_sizes: [0.025, 0.1]
+flat_view:
+    # Set a two theta range that will display all of the data.
+    tth_range: [4.0, 95.0]
+    # Pixel sizes in two theta, eta
+    # Smaller pixel sizes means higher resolution, but it can
+    # take substantially longer to generate the image.
+    pixel_sizes: [0.05, 0.05]
+raw_view:
+    # This saturation level will largely depend on the gain setting
+    # of the detectors. 38000 is good for a gain setting of 1 (the most gain).
+    # A higher value will most likely be needed for other gain settings.
+    # This setting is used for when the "Saturation check" checkbox is checked.
+    saturation_level: 38000

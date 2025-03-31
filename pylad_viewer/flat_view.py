@@ -125,21 +125,22 @@ if __name__ == '__main__':
 
     from hexrd.instrument import HEDMInstrument
 
-    import pylad_viewer.resources
+    import pylad_viewer.resources.instruments
 
-    resources_path = importlib.resources.files(pylad_viewer.resources)
+    instruments_path = importlib.resources.files(
+        pylad_viewer.resources.instruments)
 
     repo_dir = Path(pylad_viewer.__file__).parent.parent
     ceria_example_path = repo_dir / 'examples/ceria'
-    images_path = ceria_example_path / 'images'
+    images_path = ceria_example_path / 'Run1'
 
     # Load the instrument
-    with open(resources_path / 'MEC_Varex.yml', 'r') as rf:
+    with open(instruments_path / 'Example_MEC_Varex.yml', 'r') as rf:
         conf = yaml.safe_load(rf)
 
     instr = HEDMInstrument(conf)
 
-    with open(resources_path / 'varex_flat_projection.yml', 'r') as rf:
+    with open(instruments_path / 'varex_flat_projection.yml', 'r') as rf:
         conf = yaml.safe_load(rf)
 
     flat_instr = HEDMInstrument(conf)

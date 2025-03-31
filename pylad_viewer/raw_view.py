@@ -24,6 +24,7 @@ class RawImagesWidget(QWidget):
 
         self.link_levels_and_cmaps = True
         self._updating_histograms = False
+        self.saturation_level = 38000
 
         self.setup_connections()
 
@@ -152,17 +153,18 @@ class RawImagesWidget(QWidget):
         return [im.getHistogramWidget() for im in self.image_view_list]
 
     def set_levels_for_saturation_check(self):
-        lower = 38000
-        upper = 38500
+        saturation_level = self.saturation_level
+        lower = saturation_level - 1
+        upper = lower + 1
         for im in self.image_view_list:
             im.setLevels(lower, upper)
             im.setHistogramRange(lower - 1e3, upper + 1e3)
 
         data = np.array(self.array_list)
-        num_saturated = np.count_nonzero(data > lower)
+        num_saturated = np.count_nonzero(data > saturation_level)
         if num_saturated > 0:
             for array, artist in zip(self.array_list, self.reflection_artists):
-                coords = np.argwhere(array > lower)
+                coords = np.argwhere(array > saturation_level)
                 if coords.size == 0:
                     continue
 
@@ -174,7 +176,13 @@ class RawImagesWidget(QWidget):
                 None,
                 'Saturation Warning',
                 f'Data contains {num_saturated} pixels '
-                f'above {lower} in value'
+                f'above {saturation_level} in value'
+            )
+        else:
+            QMessageBox.information(
+                None,
+                'Saturation Check',
+                f'No pixels above {saturation_level} in value were found!',
             )
 
     def clear_artists(self):
@@ -298,7 +306,7 @@ if __name__ == '__main__':
         # Use the default images
         repo_dir = Path(pylad_viewer.__file__).parent.parent
         ceria_example_path = repo_dir / 'examples/ceria'
-        images_path = ceria_example_path / 'images'
+        images_path = ceria_example_path / 'Run1'
         image_file_paths = [
             images_path / 'varex1.tif',
             images_path / 'varex2.tif',

@@ -23,6 +23,7 @@ from hexrd.projections.polar import PolarView
 
 import pylad_viewer
 import pylad_viewer.resources
+import pylad_viewer.resources.instruments
 from pylad_viewer.instrument_projection import InstrumentProjection
 from pylad_viewer.flat_view import FlatViewWidget
 from pylad_viewer.raw_view import RawImagesWidget
@@ -34,29 +35,43 @@ def main():
         # Use the default images
         repo_dir = Path(pylad_viewer.__file__).parent.parent
         ceria_example_path = repo_dir / 'examples/ceria'
-        images_path = ceria_example_path / 'images'
+        images_path = ceria_example_path / 'Run1'
         image_file_paths = [
             images_path / 'varex1.tif',
             images_path / 'varex2.tif',
         ]
+        # Use the example instrument
+        instr_filename = 'Example_MEC_Varex.yml'
+        config_filename = 'example_config.yml'
     else:
         image_file_paths = sys.argv[1:3]
+        # Use the latest instrument file
+        instr_filename = 'MEC_Varex.yml'
+        config_filename = 'config.yml'
 
-    resources_path = importlib.resources.files(pylad_viewer.resources)
+    resources_path = importlib.resources.files(
+        pylad_viewer.resources)
+
+    instruments_path = importlib.resources.files(
+        pylad_viewer.resources.instruments)
 
     repo_dir = Path(pylad_viewer.__file__).parent.parent
     ceria_example_path = repo_dir / 'examples/ceria'
 
     # Load the instrument
-    with open(resources_path / 'MEC_Varex.yml', 'r') as rf:
+    with open(instruments_path / instr_filename, 'r') as rf:
+        iconf = yaml.safe_load(rf)
+
+    instr = HEDMInstrument(iconf)
+
+    with open(instruments_path / 'varex_flat_projection.yml', 'r') as rf:
+        iconf = yaml.safe_load(rf)
+
+    flat_instr = HEDMInstrument(iconf)
+
+    # Open up the config
+    with open(resources_path / config_filename, 'r') as rf:
         conf = yaml.safe_load(rf)
-
-    instr = HEDMInstrument(conf)
-
-    with open(resources_path / 'varex_flat_projection.yml', 'r') as rf:
-        conf = yaml.safe_load(rf)
-
-    flat_instr = HEDMInstrument(conf)
 
     pg.setConfigOptions(
         **{
@@ -89,6 +104,17 @@ def main():
     bottom_layout = QHBoxLayout()
 
     check_saturation_cb = QCheckBox('Saturation Check')
+    check_saturation_cb.setToolTip(
+        'Perform a saturation check. This is helpful to use during '
+        'pre-shot to determine if there are any spots that are too intense '
+        '(e.g., LiF spots) which may damage the detector at full x-ray '
+        'strength.\n\nWhen checked, a message will appear indicating the '
+        'number of saturated pixels detected. The colormap settings are also '
+        'automatically adjusted so that saturated pixels are black and all '
+        'other pixels are white. Red circles are drawn around saturated '
+        'pixels so they can be more easily located.\n\nThe saturation level '
+        'may be modified in the config settings.'
+    )
     run_num_label = QLabel()
     run_num_label.setStyleSheet(
         'font-size: 18pt; font-weight: bold; color: red'
@@ -117,6 +143,7 @@ def main():
     raw_images_widget = RawImagesWidget(list(img_dict.values()), win)
     raw_images_widget.mouse_move_message.connect(show_message)
     top_layout.addWidget(raw_images_widget, stretch=3)
+    raw_images_widget.saturation_level = conf['raw_view']['saturation_level']
 
     def check_saturation_toggled(b: bool):
         if b:
@@ -129,11 +156,12 @@ def main():
     check_saturation_cb.toggled.connect(check_saturation_toggled)
 
     # Flat view
-    tth_range = [6.0, 86.0]
+    tth_range = conf['flat_view']['tth_range']
+    pixel_size = conf['flat_view']['pixel_sizes']
+    # I don't think we need to ever change these eta ranges. If we
+    # do, we can add it as an option in the config.
     eta_min = 0.0
     eta_max = 360.0
-    # pixel_size = (0.025, 0.25)
-    pixel_size = (0.05, 0.05)
 
     pv = PolarView(tth_range, instr, eta_min, eta_max, pixel_size,
                    cache_coordinate_map=True)
@@ -144,11 +172,9 @@ def main():
     top_layout.addWidget(flat_view_widget, stretch=2)
 
     # Polar view
-    tth_range = [12.0, 86.0]
-    eta_min = -90.0
-    eta_max = 270.0
-    # pixel_size = (0.01, 0.1)
-    pixel_size = (0.025, 0.1)
+    tth_range = conf['polar_view']['tth_range']
+    eta_min, eta_max = conf['polar_view']['eta_range']
+    pixel_size = conf['polar_view']['pixel_sizes']
 
     pv = PolarView(tth_range, instr, eta_min, eta_max, pixel_size,
                    cache_coordinate_map=True)
